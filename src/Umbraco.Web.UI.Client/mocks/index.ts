@@ -7,12 +7,31 @@ import type {
 	HttpResponse as HttpResponseType,
 	delay as delayType,
 	isCommonAssetRequest as isCommonAssetRequestType,
+	RequestHandler,
 } from 'msw';
 import { umbracoPath } from '@umbraco-cms/backoffice/utils';
 
 const worker = setupWorker(...handlers);
 
 export { setupWorker };
+
+/**
+ * Register additional MSW request handlers at runtime.
+ *
+ * Intended for extensions developed outside the Umbraco-CMS repository (loaded via an
+ * absolute `VITE_EXAMPLE_PATH`) so they can mock their own API endpoints on top of the
+ * active mock set. Uses MSW's native `worker.use()` runtime-override mechanism, so these
+ * handlers take priority over the built-in ones.
+ *
+ * Available globally to extensions as `window.MockServiceWorker.addMockHandlers(...)`.
+ * @param additionalHandlers - MSW request handlers to add.
+ */
+export const addMockHandlers = (...additionalHandlers: RequestHandler[]) => {
+	worker.use(...additionalHandlers);
+};
+
+// Expose globally so externally-developed extensions can register their own API mocks.
+window.MockServiceWorker.addMockHandlers = addMockHandlers;
 
 export const onUnhandledRequest = (request: Request) => {
 	// Skip common static asset requests (JS/TS modules, CSS, images, fonts, etc.)
@@ -81,6 +100,7 @@ declare global {
 			HttpResponse: typeof HttpResponseType;
 			delay: typeof delayType;
 			isCommonAssetRequest: typeof isCommonAssetRequestType;
+			addMockHandlers: typeof addMockHandlers;
 		};
 	}
 }

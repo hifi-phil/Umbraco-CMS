@@ -31,8 +31,13 @@ async function bootstrap() {
 	document.body.append(appElement);
 
 	// Example injector:
+	// Supports both a relative path (a folder under ./examples, in-repo) and an absolute path
+	// (an extension developed outside this repo). Absolute paths are served through Vite's
+	// /@fs/ prefix. In both cases the target folder must expose an index.ts that exports manifests.
 	if (import.meta.env.VITE_EXAMPLE_PATH) {
-		import(/* @vite-ignore */ './' + import.meta.env.VITE_EXAMPLE_PATH + '/index.ts').then((js) => {
+		const examplePath = import.meta.env.VITE_EXAMPLE_PATH;
+		const importPath = examplePath.startsWith('/') ? '/@fs' + examplePath : './' + examplePath;
+		import(/* @vite-ignore */ importPath + '/index.ts').then((js) => {
 			if (js) {
 				Object.keys(js).forEach((key) => {
 					const value = js[key];
